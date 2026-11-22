@@ -25,5 +25,3 @@ config = Config(
     llm_api_key=_require_env("LLM_API_KEY"),
     llm_model=_require_env("LLM_MODEL"),
 )
-
-print(config)
