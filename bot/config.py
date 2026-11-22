@@ -17,6 +17,7 @@ class Config:
     llm_base: str
     llm_api_key: str
     llm_model: str
+    database_path: str
 
 config = Config(
     telegram_token=_require_env("TELEGRAM_BOT_TOKEN"),
@@ -24,4 +25,5 @@ config = Config(
     llm_base=_require_env("LLM_BASE_URL"),
     llm_api_key=_require_env("LLM_API_KEY"),
     llm_model=_require_env("LLM_MODEL"),
+    database_path=os.getenv("DATABASE_PATH", "data/nudge.db"),
 )
