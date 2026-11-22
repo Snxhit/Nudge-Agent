@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timezone TEXT NOT NULL DEFAULT 'UTC',
-    created_at TEXT NOT NULL,
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS platform_links (
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS platform_links (
     account_id INTEGER NOT NULL,
     linked_at TEXT NOT NULL,
     PRIMARY KEY (platform, platform_user_id)
-    FOREGIN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS notes (
