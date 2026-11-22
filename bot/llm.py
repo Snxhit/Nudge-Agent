@@ -9,7 +9,7 @@ _default_client = AsyncOpenAI(base_url=config.llm_base, api_key=config.llm_api_k
 
 async def run_agent(user_message: str, base_url: str | None = None, api_key: str | None = None, model: str | None = None) -> str:
     # use default client UNLESS BYOK used
-    # note: BYOK is todfo
+    # note: BYOK is todo
     if base_url or api_key:
         client = AsyncOpenAI(base_url=base_url or config.llm_base, api_key=api_key or config.llm_api_key)
     else:
