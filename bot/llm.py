@@ -2,8 +2,7 @@ import asyncio
 from openai import AsyncOpenAI
 from bot.config import config
 
-# temp system prompt, replace later
-SYSTEM_PROMPT = "You are Nudge, a concise, proactive personal assistant on Telegram."
+SYSTEM_PROMPT = "You are Nudge, a concise, proactive personal assistant on Telegram. Your job is to act as an assistant, and only reply with whatever the user says, that is worth noting for you. If the user tells you there's an event coming up tomorrow, that is important for you. If the user tells you the sky is blue, that is not relevant for you, so you don't consider that. The format of the reply should be: One heading and then every important event you noted from the user's prompt in bullet points."
 
 _default_client = AsyncOpenAI(base_url=config.llm_base, api_key=config.llm_api_key)
 
