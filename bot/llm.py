@@ -16,7 +16,3 @@ async def run_agent(user_message: str, base_url: str | None = None, api_key: str
         ],
     )
     return response.choices[0].message.content or "..."
-
-if __name__ == "__main__":
-    reply = asyncio.run(run_agent("Hello!"))
-    print(reply)
