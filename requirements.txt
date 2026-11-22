@@ -1,0 +1,6 @@
+python-telegram-bot[job-queue]<23.0
+openai<4.0
+aiosqlite
+python-dotenv
+cryptography
+tzdata
