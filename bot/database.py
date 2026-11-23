@@ -7,6 +7,20 @@ from contextlib import asynccontextmanager
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+def to_iso(dt: datetime) -> datetime:
+    # todo: strftime() thingy
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def parse_iso(iso_str: str) -> datetime:
+    clean = iso_str.strip().replace("Z", "+00:00")
+    dt = datetime.fromisoformat(clean)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 @asynccontextmanager
 async def get_db():
     db_dir = os.path.dirname(config.database_path)
@@ -21,13 +35,6 @@ async def get_db():
         yield db
     finally:
         await db.close()
-
-def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
-
-def to_iso(dt: datetime) -> datetime:
-    # todo: strftime() thingy
-    return dt.astimezone(timezone.utc)
 
 async def init_db() -> None:
     schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
