@@ -2,8 +2,13 @@ import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from bot.config import config
 from bot.handlers import start_command, handle_message
+from bot.database import init_db
 
 logging.basicConfig(format="%(asctime)s | %(levelname)s | %(name)s | %(message)s", level=logging.INFO)
+
+async def post_init(application: Application):
+    await init_db()
+    logging.info("SQLite database initialised in WAL mode.")
 
 def main():
     app = Application.builder().token(config.telegram_token).build()
