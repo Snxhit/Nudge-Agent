@@ -74,7 +74,7 @@ async def get_or_create_account(platform: str, platform_uid: str | int, chat_id:
 
         await db.execute(
             """
-            INSERT INTO platforms_links (platforms, platform_user_id, chat_id, username, account_id, linked_at)
+            INSERT INTO platform_links (platform, platform_user_id, chat_id, username, account_id, linked_at)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
             (platform, p_uid, c_id, username, account_id, now),
