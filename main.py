@@ -11,7 +11,7 @@ async def post_init(application: Application):
     logging.info("SQLite database initialised in WAL mode.")
 
 def main():
-    app = Application.builder().token(config.telegram_token).build()
+    app = Application.builder().token(config.telegram_token).post_init(post_init).build()
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
