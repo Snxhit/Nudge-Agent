@@ -82,3 +82,56 @@ async def get_or_create_account(platform: str, platform_uid: str | int, chat_id:
 
         await db.commit()
         return account_id
+
+async def insert_note(acc_id: int, title: str, content: str, category: str = "general") -> int:
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO notes (account_id, category, title, content, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (acc_id, category.lower().strip(), title.strip(), content.strip(), to_iso(utc_now()))
+        )
+        await db.commit()
+        return cursor.lastrowid
+
+async def query_notes(acc_id: int, keyword: str) -> list[dict]:
+    pattern = f"%{keyword.strip}%"
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            SELECT id, category, title, content, created_at
+            FROM notes
+            WHERE account_id = ? AND (title LIKE ? OR content LIKE ? OR category LIKE ?)
+            ORDER BY id DESC
+            LIMIT 15
+            """,
+            (acc_id, pattern, pattern, pattern),
+        )
+        return [dict(r) for r in await cursor.fetchall()]
+
+async def fetch_recent_notes(acc_id: int, limit: int = 10) -> list[dict]:
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            SELECT id, category, title, content, created_at
+            FROM notes
+            WHERE account_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (acc_id, limit),
+        )
+        return [dict(r) for r in await cursor.fetchall()]
+
+async def insert_reminder(acc_id: int, platform: str, chat_id: str | int, message: str, due_at_iso: str, todo_id: int | None = None):
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO reminders (account_id, todo_id, message, due_at, platform, chat_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (acc_id, todo_id, message.strip(), due_at_iso, platform, str(chat_id), to_iso(utc_now())),
+        )
+        await db.commit()
+        return cursor.lastrowid
