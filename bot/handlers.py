@@ -23,12 +23,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text or not user or not chat:
         return
 
-    await get_or_create_account("telegram", user.id, chat.id, user.username)
+    acc_id = await get_or_create_account("telegram", user.id, chat.id, user.username)
 
     try:
-        reply = await run_agent(update.message.text)
+        reply = await run_agent(
+            user_message=update.message.text,
+            acc_id=acc_id,
+            platform="telegram",
+            chat_id=chat.id
+        )
     except Exception as exc:
-        logger.exception("LLM call failed.")
-        reply = f"LLM error: `{exc}`"
+        logger.exception("Agent error.")
+        reply = f"Error: `{exc}`"
 
     await update.message.reply_text(reply)
