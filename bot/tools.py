@@ -1,4 +1,11 @@
-
+from datetime import timedelta
+import json
+from bot.database import (
+    to_iso,
+    utc_now,
+    parse_iso,
+    insert_reminder
+)
 
 TOOL_SCHEMA = [
     {
@@ -22,3 +29,20 @@ TOOL_SCHEMA = [
         },
     },
 ]
+
+async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_id: str | int) -> str:
+    try:
+        if name == "add_reminder":
+            if args.get("delay_minutes") is not None:
+                due_iso = to_iso(utc_now() + timedelta(minutes=int(args["delay_minutes"])))
+            elif args.get("due_at_utc"):
+                due_iso = to_iso(parse_iso(args["due_at_utc"]))
+            else:
+                return json.dumps({"error": "Provide either delay_minutes or due_at_utc."})
+
+            rem_id = await insert_reminder(acc_id=acc_id, platform=platform, chat_id=chat_id, message=args["message"], due_at_iso=due_iso)
+            return json.dumps({"status": "scheduled", "reminder_id": rem_id, "due_at_utc": due_iso})
+
+        return json.dumps({"error": f"Unknown tool."})
+    except Exception as exc:
+        return json.dumps({"error": str(exc)})
