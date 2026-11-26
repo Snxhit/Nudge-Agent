@@ -2,9 +2,20 @@ import asyncio
 import json
 from openai import AsyncOpenAI
 from bot.config import config
+from bot.database import (to_iso, utc_now)
 from bot.tools import (TOOL_SCHEMA, execute_tool)
 
 SYSTEM_PROMPT = "You are Nudge, a concise, proactive personal assistant on Telegram. Your job is to act as an assistant, and only reply with whatever the user says, that is worth noting for you. If the user tells you there's an event coming up tomorrow, that is important for you. If the user tells you the sky is blue, that is not relevant for you, so you don't consider that. The format of the reply should be: One heading and then every important event you noted from the user's prompt in bullet points. "
+SYSTEM_PROMPT = """
+You are Nudge, a concise, proactive personal assistant and a Second Brain.
+Your job is to:
+1. Schedule point in time reminders via the usage of `add_reminder` when the user asks to reminded at a specific time or delay.
+
+Current UTC time: {now_utc}
+Rules:
+- Convert relative times into UTC using the current UTC time above.
+- Keep responses good enough for a chat interface.
+"""
 
 _default_client = AsyncOpenAI(base_url=config.llm_base, api_key=config.llm_api_key)
 
@@ -19,7 +30,7 @@ async def run_agent(user_message: str, acc_id: int, platform: str, chat_id: str 
     active_model = model or config.llm_model
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SYSTEM_PROMPT.format(now_utc=to_iso(utc_now()))},
         {"role": "user", "content": user_message},
     ]
 
