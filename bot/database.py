@@ -135,3 +135,23 @@ async def insert_reminder(acc_id: int, platform: str, chat_id: str | int, messag
         )
         await db.commit()
         return cursor.lastrowid
+
+async def fetch_due_reminders(platform: str = "telegram") -> list[dict]:
+    now_iso = to_iso(utc_now())
+
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            SELECT id, account_id, todo_id, message, due_at, chat_id
+            FROM reminders
+            WHERE platform = ? AND is_sent = 0 AND due_at <= ?
+            ORDER BY due_at ASC
+            """,
+            (platform, now_iso),
+        )
+        return [dict(r) for r in await cursor.fetchall()]
+
+async def mark_reminder_sent(reminder_id: int):
+    async with get_db() as db:
+        await db.execute("UPDATE reminders SET is_sent = 1 WHERE id = ?", (reminder_id))
+        await db.commit()
