@@ -153,5 +153,5 @@ async def fetch_due_reminders(platform: str = "telegram") -> list[dict]:
 
 async def mark_reminder_sent(reminder_id: int):
     async with get_db() as db:
-        await db.execute("UPDATE reminders SET is_sent = 1 WHERE id = ?", (reminder_id))
+        await db.execute("UPDATE reminders SET is_sent = 1 WHERE id = ?", (reminder_id,))
         await db.commit()
