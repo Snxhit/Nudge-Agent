@@ -8,7 +8,6 @@ from bot.tools import (TOOL_SCHEMA, execute_tool)
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = "You are Nudge, a concise, proactive personal assistant on Telegram. Your job is to act as an assistant, and only reply with whatever the user says, that is worth noting for you. If the user tells you there's an event coming up tomorrow, that is important for you. If the user tells you the sky is blue, that is not relevant for you, so you don't consider that. The format of the reply should be: One heading and then every important event you noted from the user's prompt in bullet points. "
 SYSTEM_PROMPT = """
 You are Nudge, a concise, proactive personal assistant and a Second Brain.
 Your job is to:
@@ -67,6 +66,6 @@ async def run_agent(user_message: str, acc_id: int, platform: str, chat_id: str 
                     )
     except Exception as exc:
         logger.warning("Agent call failed: %s", exc)
-        return "Sorry, tool calling failed. Please try again."
+        return "Sorry, agent calling failed. Please try again."
 
     return "Tool call limit exceeded, please rephrase and try again."
