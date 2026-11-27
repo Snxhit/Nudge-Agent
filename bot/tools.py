@@ -5,7 +5,8 @@ from bot.database import (
     utc_now,
     parse_iso,
     insert_reminder,
-    insert_note
+    insert_note,
+    query_notes
 )
 
 TOOL_SCHEMA = [
@@ -22,6 +23,20 @@ TOOL_SCHEMA = [
                     "category": {"type": "string", "description": "Category such as 'fact', 'idea'."},
                 },
                 "required": ["title", "content"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_notes",
+            "description": "Search the user's saved notes by keywords on titles, content and category.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "keyword": {"type": "string", "description": "Keyword or topic to search for."},
+                },
+                "required": ["keyword"],
             },
         },
     },
@@ -62,6 +77,9 @@ async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_i
         elif name == "save_note":
             note_id = await insert_note(acc_id=acc_id, title=args["title"], content=args["content"], category=args.get("category", "general"))
             return json.dumps({"status": "saved", "note_id": note_id, "title": args["title"]})
+        elif name == "search_notes":
+            notes = await query_notes(acc_id=acc_id, keyword=args["keyword"])
+            return json.dumps({"count": len(notes), "notes": notes})
 
         return json.dumps({"error": f"Unknown tool."})
     except Exception as exc:

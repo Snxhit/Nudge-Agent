@@ -96,7 +96,7 @@ async def insert_note(acc_id: int, title: str, content: str, category: str = "ge
         return cursor.lastrowid
 
 async def query_notes(acc_id: int, keyword: str) -> list[dict]:
-    pattern = f"%{keyword.strip}%"
+    pattern = f"%{keyword.strip()}%"
     async with get_db() as db:
         cursor = await db.execute(
             """
