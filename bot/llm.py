@@ -21,13 +21,13 @@ Rules:
 - Keep naming relevant. Every reminder, note title should describe exactly what it is.
 """
 
-_default_client = AsyncOpenAI(base_url=config.llm_base, api_key=config.llm_api_key, timeout=10.0, max_retries=0)
+_default_client = AsyncOpenAI(base_url=config.llm_base, api_key=config.llm_api_key, timeout=30.0, max_retries=1)
 
 async def run_agent(user_message: str, acc_id: int, platform: str, chat_id: str | int, base_url: str | None = None, api_key: str | None = None, model: str | None = None):
     # use default client UNLESS BYOK used
     # note: BYOK is todo
     client = (
-        AsyncOpenAI(base_url=base_url or config.llm_base, api_key=api_key or config.llm_api_key, timeout=10.0, max_retries=0)
+        AsyncOpenAI(base_url=base_url or config.llm_base, api_key=api_key or config.llm_api_key, timeout=30.0, max_retries=1)
         if (base_url or api_key)
         else _default_client
     )
