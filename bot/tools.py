@@ -20,8 +20,8 @@ TOOL_SCHEMA = [
                     "content": {"type": "string", "description": "Full note content or structured plan."},
                     "category": {"type": "string", "description": "Category such as 'fact', 'idea'."},
                 },
+                "required": ["title", "content"],
             },
-            "required": ["title", "content"],
         },
     },
     {

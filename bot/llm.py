@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import json
-from openai import AsyncOpenAI
+from openai import (AsyncOpenAI, BadRequestError)
 from bot.config import config
 from bot.database import (to_iso, utc_now)
 from bot.tools import (TOOL_SCHEMA, execute_tool)
@@ -64,6 +64,9 @@ async def run_agent(user_message: str, acc_id: int, platform: str, chat_id: str 
                             "content": result,
                         }
                     )
+    except BadRequestError as exc:
+        logger.warning("Bad request body: %s", exc.body)
+        return "Sorry, bad request error. Please try again."
     except Exception as exc:
         logger.warning("Agent call failed: %s", exc)
         return "Sorry, agent calling failed. Please try again."

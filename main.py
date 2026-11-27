@@ -1,7 +1,7 @@
 import logging
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from bot.config import config
-from bot.handlers import start_command, handle_message
+from bot.handlers import start_command, handle_message, error_handler
 from bot.database import init_db
 
 logging.basicConfig(format="%(asctime)s | %(levelname)s | %(name)s | %(message)s", level=logging.INFO)
@@ -17,6 +17,8 @@ def main():
 
     logging.info("Nudge Agent Bot started...")
     app.run_polling(drop_pending_updates=True)
+
+    app.add_error_handler(error_handler)
 
 if __name__ == "__main__":
     main()

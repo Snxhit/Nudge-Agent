@@ -1,12 +1,19 @@
 import logging
 import asyncio
 from telegram import Update
+from telegram.error import NetworkError
 from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 from bot.llm import run_agent
 from bot.database import get_or_create_account
 
 logger = logging.getLogger(__name__)
+
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if isinstance(context.error, NetworkError):
+        logger.warning("Network error on Telegram: %s", context.error)
+        return
+    logger.error("Unhandled exception: ", exc_info=context.error)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
