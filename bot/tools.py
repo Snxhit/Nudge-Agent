@@ -11,6 +11,22 @@ TOOL_SCHEMA = [
     {
         "type": "function",
         "function": {
+            "name": "save_note",
+            "description": "Save a passive idea, fact, or spontaneous brainstorm into the user's Second Brain.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Short descriptive title for the note."},
+                    "content": {"type": "string", "description": "Full note content or structured plan."},
+                    "category": {"type": "string", "description": "Category such as 'fact', 'idea'."},
+                },
+            },
+            "required": ["title", "content"],
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "add_reminder",
             "description": (
                 "Schedule a one-off reminder for an event. (ex.: a meeting, class)"
