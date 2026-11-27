@@ -6,7 +6,8 @@ from bot.database import (
     parse_iso,
     insert_reminder,
     insert_note,
-    query_notes
+    query_notes,
+    fetch_recent_notes,
 )
 
 TOOL_SCHEMA = [
@@ -37,6 +38,19 @@ TOOL_SCHEMA = [
                     "keyword": {"type": "string", "description": "Keyword or topic to search for."},
                 },
                 "required": ["keyword"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_notes",
+            "description": "List the user's most recently saved notes.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "limit": {"type": "integer", "description": "Max number of notes to return (Default 10)"},
+                },
             },
         },
     },
@@ -79,6 +93,10 @@ async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_i
             return json.dumps({"status": "saved", "note_id": note_id, "title": args["title"]})
         elif name == "search_notes":
             notes = await query_notes(acc_id=acc_id, keyword=args["keyword"])
+            return json.dumps({"count": len(notes), "notes": notes})
+        elif name == "list_notes":
+            limit = min(int(args.get("limit", 10)), 25)
+            notes = await fetch_recent_notes(acc_id=acc_id, limit=limit)
             return json.dumps({"count": len(notes), "notes": notes})
 
         return json.dumps({"error": f"Unknown tool."})
