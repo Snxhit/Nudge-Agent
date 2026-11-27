@@ -4,7 +4,8 @@ from bot.database import (
     to_iso,
     utc_now,
     parse_iso,
-    insert_reminder
+    insert_reminder,
+    insert_note
 )
 
 TOOL_SCHEMA = [
@@ -58,6 +59,9 @@ async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_i
 
             rem_id = await insert_reminder(acc_id=acc_id, platform=platform, chat_id=chat_id, message=args["message"], due_at_iso=due_iso)
             return json.dumps({"status": "scheduled", "reminder_id": rem_id, "due_at_utc": due_iso})
+        elif name == "save_note":
+            note_id = await insert_note(acc_id=acc_id, title=args["title"], content=args["content"], category=args.get("category", "general"))
+            return json.dumps({"status": "saved", "note_id": note_id, "title": args["title"]})
 
         return json.dumps({"error": f"Unknown tool."})
     except Exception as exc:
