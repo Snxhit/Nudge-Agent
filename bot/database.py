@@ -214,7 +214,36 @@ async def update_todos(acc_id: int, todo_id: int, new_title: str | None = None, 
         if not row:
             return None
 
-        # todo: editing the todo
+        title = new_title.strip() if new_title else row["title"]
+        due_dt = parse_iso(new_due_at) if new_due_at else parse_iso(row["due_at"])
+        normalized_iso = to_iso(due_dt)
+
+        await db.execute(
+            """
+            UPDATE todos
+            SET title = ?, due_at = ?, status = 'active'
+            WHERE id = ? AND account_id = ?
+            """,
+            (title, normalized_iso, todo_id, acc_id),
+        )
+
+        lead_iso = _compute_lead_reminder_iso(due_dt)
+        if lead_iso:
+            await db.execute(
+                """
+                INSERT INTO reminders (account_id, todo_id, message, due_at, platform, chat_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (acc_id, todo_id, f"Todo due in 6 hours: {title}", lead_iso, row["source_platform"], row["source_chat_id"], to_iso(utc_now())),
+            )
+
+        await db.commit()
+        return  {
+            "todo_id": todo_id,
+            "title": title,
+            "due_at_utc": normalized_iso,
+            "reminder_scheduled_utc": lead_iso,
+        }
 
 async def complete_todo(acc_id: int, todo_id: int) -> bool:
     async with get_db() as db:
