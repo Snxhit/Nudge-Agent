@@ -8,6 +8,11 @@ from bot.database import (
     insert_note,
     query_notes,
     fetch_recent_notes,
+    insert_todo,
+    update_todos,
+    fetch_active_todos,
+    delete_todo,
+    complete_todo,
 )
 
 TOOL_SCHEMA = [
@@ -74,7 +79,31 @@ TOOL_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "add_todo",
+            "description":
+                "Create an actionable todo list item with a deadline. Automatically sets a reminder 6 hours before the deadline. Provide EITHER 'due_at_utc' (YYYY-MM-DDTHH:MM:SSZ) OR 'due_in_hours'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "The tasks description."},
+                    "due_at_utc": {"type": "string", "description": "Deadline in UTC."},
+                    "due_in_hours": {"type": "string", "description": "Hours from now until the deadline."},
+                },
+                "required": ["title"],
+            },
+        },
+    },
 ]
+
+def _resolve_due_iso(due_at_utc: str | None, offset: float | None = None) -> str | None:
+    if due_at_utc:
+        return to_iso(parse_iso(due_at_utc))
+    if offset is not None:
+        return to_iso(utc_now() + timedelta(hours=float(offset)))
+    return None
 
 async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_id: str | int) -> str:
     try:
@@ -98,6 +127,12 @@ async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_i
             limit = min(int(args.get("limit", 10)), 25)
             notes = await fetch_recent_notes(acc_id=acc_id, limit=limit)
             return json.dumps({"count": len(notes), "notes": notes})
+        elif name == "add_todo":
+            due_iso = _resolve_due_iso(args.get("due_at_utc"), args.get("due_in_hours"))
+            if not due_iso:
+                return json.dumps({"error": "Provide due_at_utc or due_in_hours!"})
+            created = await insert_todo(acc_id=acc_id, title=args["title"], due_at_iso=due_iso, platform=platform, chat_id=chat_id)
+            return json.dumps({"status": "created", **created})
 
         return json.dumps({"error": f"Unknown tool."})
     except Exception as exc:
