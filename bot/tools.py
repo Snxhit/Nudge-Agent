@@ -96,6 +96,34 @@ TOOL_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "complete_todo",
+            "description": "Mark a todo as completed and cancel reminders linked to it.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "todo_id": {"type": "integer", "description": "Numeric ID of the completed todo."},
+                },
+                "required": ["todo_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "detete_todo",
+            "description": "Remove a todo along with its linked reminders.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "todo_id": {"type": "integer", "description": "Numeric ID of the todo to be deleted."},
+                },
+                "required": ["todo_id"],
+            },
+        },
+    },
 ]
 
 def _resolve_due_iso(due_at_utc: str | None, offset: float | None = None) -> str | None:
@@ -133,6 +161,13 @@ async def execute_tool(name: str, args: dict, acc_id: int, platform: str, chat_i
                 return json.dumps({"error": "Provide due_at_utc or due_in_hours!"})
             created = await insert_todo(acc_id=acc_id, title=args["title"], due_at_iso=due_iso, platform=platform, chat_id=chat_id)
             return json.dumps({"status": "created", **created})
+        elif name == "complete_todo":
+            ok = await complete_todo(acc_id=acc_id, todo_id=int(args["todo_id"]))
+            return json.dumps({"status": "completed" if ok else "not_found", "todo_id": args["todo_id"]})
+        elif name == "delete_todo":
+            ok =  await delete_todo(acc_id=acc_id, todo_id=int(args["todo_id"]))
+            return json.dumps({"status": "deleted" if ok else "not_found", "todo_id": args["todo_id"]})
+
 
         return json.dumps({"error": f"Unknown tool."})
     except Exception as exc:
