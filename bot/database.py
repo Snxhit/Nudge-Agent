@@ -1,6 +1,6 @@
 import os
 import aiosqlite
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from bot.config import config
 from contextlib import asynccontextmanager
@@ -11,7 +11,6 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 def to_iso(dt: datetime) -> datetime:
-    # todo: strftime() thingy
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def parse_iso(iso_str: str) -> datetime:
@@ -20,6 +19,12 @@ def parse_iso(iso_str: str) -> datetime:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
+
+def _compute_lead_reminder_iso(due_dt: datetime) -> str | None:
+    lead_dt = due_dt - timedelta(hours=6)
+    if lead_dt > utc_now():
+        return to_iso(lead_dt)
+    return None
 
 @asynccontextmanager
 async def get_db():
@@ -155,3 +160,81 @@ async def mark_reminder_sent(reminder_id: int):
     async with get_db() as db:
         await db.execute("UPDATE reminders SET is_sent = 1 WHERE id = ?", (reminder_id,))
         await db.commit()
+
+async def insert_todo(acc_id: int, title: str, due_at_iso: str, platform: str, chat_id: str | int) -> dict:
+    now_iso = to_iso(utc_now())
+    due_dt = parse_iso(due_at_iso)
+    normalized_due = to_iso(due_dt)
+    lead_iso = _compute_lead_reminder_iso(due_dt)
+
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO todos (account_id, title, due_at, status, source_platform, source_chat_id, created_at)
+            VALUES (?, ?, ?, 'active', ?, ?, ?)
+            """,
+            (acc_id, title.strip(), normalized_due, platform, str(chat_id), now_iso),
+        )
+        todo_id = cursor.lastrowid
+
+        if lead_iso:
+            await db.execute(
+                """
+                INSERT INTO reminders (account_id, todo_id, message, due_at, platform, chat_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (acc_id, todo_id, f"Todo due in 6 hours: {title.strip()}", lead_iso, platform, str(chat_id), now_iso),
+            )
+
+        await db.commit()
+        return {
+            "todo_id": todo_id,
+            "title": title.strip(),
+            "due_at_utc": normalized_due,
+            "reminder_scheduled_utc": lead_iso,
+        }
+
+async def fetch_active_todos(acc_id: int) -> list[dict]:
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            SELECT id, title, due_at, status, created_at
+            FROM todos
+            WHERE account_id = ? AND status IN ('active', 'overdue_prompted')
+            ORDER BY due_at ASC
+            """,
+            (acc_id,),
+        )
+        return [dict(r) for r in await cursor.fetchall()]
+
+async def update_todos(acc_id: int, todo_id: int, new_title: str | None = None, new_due_at: str | None = None) -> dict | None:
+    async with get_db() as db:
+        cursor = await db.execute("SELECT * FROM todos WHERE id = ? AND account_id = ?", (todo_id, acc_id))
+        row = await cursor.fetchone()
+        if not row:
+            return None
+
+        # todo: editing the todo
+
+async def complete_todo(acc_id: int, todo_id: int) -> bool:
+    async with get_db() as db:
+        cursor = await db.execute(
+            """
+            UPDATE todos
+            SET status = 'completed'
+            WHERE id = ? AND account_id = ? AND status != 'completed'
+            """,
+            (todo_id, acc_id),
+        )
+        if cursor.rowcount == 0:
+            return False
+
+        await db.execute("DELETE FROM reminders WHERE todo_id = ? AND is_sent = 0", (todo_id,))
+        await db.commit()
+        return True
+
+async def delete_todo(acc_id: int, todo_id: int) -> bool:
+    async with get_db() as db:
+        cursor = await db.execute("DELETE FROM todos WHERE id = ? AND account_id = ?", (todo_id, acc_id))
+        await db.commit()
+        return cursor.rowcount > 0
